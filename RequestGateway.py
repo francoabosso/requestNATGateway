@@ -72,7 +72,7 @@ def push_to_queue(payload):
     # sqs = boto3.client('sqs', aws_access_key_id=None, aws_secret_access_key=None,
     #                    endpoint_url='https://sqs.us-east-1.amazonaws.com/613517942748/afipQueue.fifo')
     response = sqs.send_message(
-        QueueUrl=queue_url, MessageBody=json.dumps(payload))
+        QueueUrl=queue_url, MessageBody=json.dumps(payload), MessageGroupId='123')
     print(response)
 
 

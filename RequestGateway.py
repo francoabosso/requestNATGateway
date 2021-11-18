@@ -72,7 +72,7 @@ def push_to_queue(payload):
     # sqs = boto3.client('sqs', aws_access_key_id=None, aws_secret_access_key=None,
     #                    endpoint_url='https://sqs.us-east-1.amazonaws.com/613517942748/afipQueue.fifo')
     response = sqs.send_message(
-        QueueUrl=queue_url, MessageBody=payload)
+        QueueUrl=queue_url, MessageBody=json.dumps(payload))
     print(response)
 
 
@@ -130,7 +130,7 @@ def request_gateway_handler(event, context):
             )
 
         print("SUMMARY:\n%s\n" % json.dumps(info))
-        push_to_queue(event)
+        push_to_queue(event['Records'][0]['body'])
         return info
     except BaseException as e:
         if 'CodePipeline.job' in event:

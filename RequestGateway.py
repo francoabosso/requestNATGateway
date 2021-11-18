@@ -8,7 +8,6 @@ from dateutil import parser
 
 from botocore.exceptions import ClientError
 
-#hola hola probando probando
 ec2 = boto3.client('ec2')
 
 
@@ -87,6 +86,16 @@ def update_route_tables(gatewayId):
         print("Update Completed for %s\n" % routeTableId)
 
 
+def invoke_lambda(payload):
+    client = boto3.client('lambda')
+    response = client.invoke(
+        FunctionName="afipApi",
+        InvocationType='Event',
+        Payload=payload
+    )
+    print(response)
+
+
 def request_gateway_handler(event, context):
     print("NAT Gateway Requested\n")
     try:
@@ -95,8 +104,7 @@ def request_gateway_handler(event, context):
         info = {
             'statusCode': 200
         }
-        print(event)
-        info['body'] = json.loads(event).Records[0].body
+
         if gateway_list == None:
             print("New Gateway Required, Launching\n")
             gatewayId = create_nat_gateway()
@@ -119,6 +127,7 @@ def request_gateway_handler(event, context):
             )
 
         print("SUMMARY:\n%s\n" % json.dumps(info))
+        invoke_lambda(event['Records'][0]['body'])
         return info
     except BaseException as e:
         if 'CodePipeline.job' in event:
@@ -166,7 +175,7 @@ def check_gateway_required(event, context):
             gw_change_list.append({'action': 'skipped', 'gatewayId': gatewayId, 'age': (
                 '%s' % age), 'inactive': ('%s' % inactive)})
     info['nat-changed'] = gw_change_list
-    info['body'] = event.Records[0].body
+    invoke_lambda(event['Records'][0]['body'])
 
     print("SUMMARY:\n%s\n" % json.dumps(info))
     return info

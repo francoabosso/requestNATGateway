@@ -64,6 +64,18 @@ def create_nat_gateway():
     return gatewayId
 
 
+queue_url = 'https://sqs.us-east-1.amazonaws.com/613517942748/afipQueue.fifo'
+
+
+def push_to_queue(payload):
+    sqs = boto3.client('sqs')
+    # sqs = boto3.client('sqs', aws_access_key_id=None, aws_secret_access_key=None,
+    #                    endpoint_url='https://sqs.us-east-1.amazonaws.com/613517942748/afipQueue.fifo')
+    response = sqs.send_message(
+        QueueUrl=queue_url, MessageBody=payload)
+    print(response)
+
+
 def update_route_tables(gatewayId):
     routes_json = ec2.describe_route_tables(
         Filters=[{'Name': 'tag:OnDemandNAT', 'Values': ['Yes', 'True']}])
@@ -84,16 +96,6 @@ def update_route_tables(gatewayId):
                          DestinationCidrBlock='0.0.0.0/0', NatGatewayId=gatewayId)
 
         print("Update Completed for %s\n" % routeTableId)
-
-
-def invoke_lambda(functionName, payload):
-    client = boto3.client('lambda')
-    response = client.invoke(
-        FunctionName=functionName,
-        InvocationType='Event',
-        Payload=payload
-    )
-    print(response)
 
 
 def request_gateway_handler(event, context):
@@ -128,7 +130,7 @@ def request_gateway_handler(event, context):
             )
 
         print("SUMMARY:\n%s\n" % json.dumps(info))
-        invoke_lambda("afipApi", event['Records'][0]['body'])
+        push_to_queue(event)
         return info
     except BaseException as e:
         if 'CodePipeline.job' in event:

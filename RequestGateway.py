@@ -86,10 +86,10 @@ def update_route_tables(gatewayId):
         print("Update Completed for %s\n" % routeTableId)
 
 
-def invoke_lambda(payload):
+def invoke_lambda(functionName, payload):
     client = boto3.client('lambda')
     response = client.invoke(
-        FunctionName="afipApi",
+        FunctionName=functionName,
         InvocationType='Event',
         Payload=payload
     )
@@ -98,6 +98,7 @@ def invoke_lambda(payload):
 
 def request_gateway_handler(event, context):
     print("NAT Gateway Requested\n")
+    print(event)
     try:
         gateway_list = list_nat_gateways()
 
@@ -127,7 +128,7 @@ def request_gateway_handler(event, context):
             )
 
         print("SUMMARY:\n%s\n" % json.dumps(info))
-        invoke_lambda(event['Records'][0]['body'])
+        invoke_lambda("afipApi", event['Records'][0]['body'])
         return info
     except BaseException as e:
         if 'CodePipeline.job' in event:
@@ -175,7 +176,6 @@ def check_gateway_required(event, context):
             gw_change_list.append({'action': 'skipped', 'gatewayId': gatewayId, 'age': (
                 '%s' % age), 'inactive': ('%s' % inactive)})
     info['nat-changed'] = gw_change_list
-    invoke_lambda(event['Records'][0]['body'])
 
     print("SUMMARY:\n%s\n" % json.dumps(info))
     return info

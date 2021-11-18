@@ -130,7 +130,7 @@ def request_gateway_handler(event, context):
             )
 
         print("SUMMARY:\n%s\n" % json.dumps(info))
-        push_to_queue(event['Records'][0]['body'])
+        push_to_queue(event)
         return info
     except BaseException as e:
         if 'CodePipeline.job' in event:
